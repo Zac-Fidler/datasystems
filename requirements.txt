@@ -10,3 +10,7 @@ azure.storage.blob
 azure.identity
 sqlalchemy
 python-dotenv
+dash
+matplotlib
+dash-bootstrap-components
+dash-ag-grid
