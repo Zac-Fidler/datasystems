@@ -4,6 +4,7 @@ from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
 from dotenv import load_dotenv
 from utils.setup import *
+from utils.dimension_classes import *
 from dash import Dash, html, dcc, Input, Output
 import plotly.express as px
 import dash_ag_grid as dag
@@ -14,22 +15,42 @@ import matplotlib.pyplot as plt
 matplotlib.use('agg')
 
 print("Main Started!")
+class MainETL():
+    def __init__(self):
+        self.drop_columns = []
+        self.dimension_table = []
+        
+    def extract(self):
+        # Use pandas read_csv to open each CSV file and extract column names from both files to fact table
+        # This means I need to combine the two CSV files / Dataframes into one singular fact table dataframe (kill me)
+        econ_cols = econ_df.cols.tolist()
+        econ_cols.pop()
+        stock_cols = stock_df.cols.tolist()
+        column_names = econ_cols + stock_cols
+        self.fact_table = pd.DataFrame(columns=column_names)
+        for econ_row in econ_df:
+            for stock_row in stock_df:
+                if (stock_df['date'][stock_row] > econ_df['date'][econ_row] and stock_df['date'][stock_row] < econ_df['date'][econ_row]):
+                    new_row = {}
+                    for col in econ_cols:
+                        new_row[col] = econ_df[col][econ_row]
+                    for col in stock_cols:
+                        new_row[col] = stock_df[col][stock_row]
+                    self.fact_table.append(new_row)
+        
+        print("Extraction to fact table from CSVs completed!!")
+                
+    
+# Stock dim tables
 
-# Load ENV variables from file
-load_dotenv()
-storage_account = os.environ.get("ACCOUNT_STORAGE")
-container_name = os.environ.get("CONTAINER_NAME")
 
-# Call setup functions
-azureDB = AzureDB()
-azureDB.access_container(container_name)
-blob_names = azureDB.list_blobs()
-blob_list = list(blob_names)
-if len(blob_list) > 0: 
-    df = azureDB.access_blob_csv(blob_names[0])
+# Econ dim tables
 
-    # Dataframe manipulation time😈
-    print(df.head)
+
+
+
+
+
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.layout = dbc.Container([
