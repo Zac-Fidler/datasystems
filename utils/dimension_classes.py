@@ -15,8 +15,7 @@ azureDB = AzureDB()
 azureDB.access_container(container_name)
 
 # Upload or access raw CSV data
-blob_names = azureDB.list_blobs()
-blob_list = list(blob_names)
+blob_list = azureDB.list_blobs()
 print("Checking if raw data uploaded to Azure")
 if len(blob_list) < 2: 
     # Upload files if not there
@@ -26,6 +25,9 @@ if len(blob_list) < 2:
     
 stock_df = azureDB.access_blob_csv(blob_name=stock_data_filename)
 econ_df  = azureDB.access_blob_csv(blob_name=econ_data_filename)
+
+print(stock_df.head())
+print(econ_df.head())
 
 class ModelAbstract():
     def __init__(self):
@@ -52,27 +54,27 @@ class DimCountry(ModelAbstract):
 class DimGDPGrowth(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("GDPGrowth", ["quarterly_GDP_growth", "date"], econ_df)
+        self.dimension_generator("GDPGrowth", ["quarterly_GDP_growth"], econ_df)
         
 class DimInflation(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("Inflation", ["quarterly_inflation", "date"], econ_df)
+        self.dimension_generator("Inflation", ["quarterly_inflation"], econ_df)
                 
 class DimUnemployment(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("Unemployment", ["quarterly_unemployment", "date"], econ_df)
+        self.dimension_generator("Unemployment", ["quarterly_unemployment"], econ_df)
                 
 class DimDebtGDP(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("DebtGDP", ["quarterly_debt_GDP", "date"], econ_df)
+        self.dimension_generator("DebtGDP", ["quarterly_debt_GDP"], econ_df)
                 
 class DimHouseholdSavingRatio(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("HouseholdSavingRatio", ["household_saving_ratio", "date"], econ_df)
+        self.dimension_generator("HouseholdSavingRatio", ["household_saving_ratio"], econ_df)
                 
 class DimStockName(ModelAbstract):
     def __init__(self):
@@ -82,21 +84,26 @@ class DimStockName(ModelAbstract):
 class DimSharePrice(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("SharePrice", ["share_price", "date"], stock_df)
+        self.dimension_generator("SharePrice", ["share_price"], stock_df)
                 
 class DimShareQuantity(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("ShareQuantity", ["share_quantity", "date"], stock_df)
+        self.dimension_generator("ShareQuantity", ["share_quantity"], stock_df)
                 
 class DimDividend(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("Dividend", ["dividend", "date"], stock_df)
+        self.dimension_generator("Dividend", ["dividend"], stock_df)
                 
 class DimEarnings(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("Earnings", ["earnings", "date"], stock_df)
+        self.dimension_generator("Earnings", ["earnings"], stock_df)
+        
+class DimDate(ModelAbstract):
+    def __init__(self):
+        super().__init__()
+        self.dimension_generator("Date", ["date"], stock_df)
         
         

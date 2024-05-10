@@ -54,9 +54,11 @@ class AzureDB():
   def list_blobs(self):
     print("Listing Blobs!")
     blob_names = self.container_client.list_blob_names()
+    blob_list = []
     for name in blob_names:
-      print("\t" + name)
-    return blob_names
+      # print("\t" + name)
+      blob_list.append(name)
+    return blob_list
       
   def download_blob(self, blob_name):
     download_file_path = os.path.join(self.local_path, blob_name)
@@ -74,7 +76,7 @@ class AzureDB():
     try:
       print(f"Accessing {blob_name} directly")
       
-      df = pd.read_csv(io.StringIO(self.container_client.download_blob(blob_name).readall.decode('utf-8')))
+      df = pd.read_csv(io.StringIO(self.container_client.download_blob(blob_name).readall().decode('utf-8')))
       return df
     except Exception as ex:
       print(f"Exception: {ex}")
