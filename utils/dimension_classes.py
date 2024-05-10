@@ -47,7 +47,7 @@ class ModelAbstract():
 class DimCountry(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("Country", ["country_name", "date"], econ_df)
+        self.dimension_generator("Country", ["country_name"], econ_df)
 
 class DimGDPGrowth(ModelAbstract):
     def __init__(self):
@@ -77,7 +77,7 @@ class DimHouseholdSavingRatio(ModelAbstract):
 class DimStockName(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("StockName", ["stock_name", "date"], stock_df)
+        self.dimension_generator("StockName", ["stock_name"], stock_df)
                 
 class DimSharePrice(ModelAbstract):
     def __init__(self):
