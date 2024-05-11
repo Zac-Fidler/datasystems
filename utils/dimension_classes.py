@@ -15,6 +15,8 @@ azureDB = AzureDB()
 azureDB.access_container(container_name)
 
 # Upload or access raw CSV data
+# azureDB.delete_blob(blob_name=econ_data_filename)
+# azureDB.delete_blob(blob_name=stock_data_filename)
 blob_list = azureDB.list_blobs()
 print("Checking if raw data uploaded to Azure")
 if len(blob_list) < 2: 
@@ -36,11 +38,12 @@ class ModelAbstract():
         
     def dimension_generator(self, name: str, columns: list, df: pd.DataFrame):
         dim = df[columns]
-        dim = dim.drop_duplicates
+        dim = dim.drop_duplicates()
         
+        # print(dim)
         # creating primary key for dimension table
         dim.insert(loc=0, column=f"{name}_id", value=range(1, len(dim) + 1))
-        self.dimensional_table = dim
+        self.dimension_table = dim
         self.name = name
         self.columns = columns
         
