@@ -114,9 +114,9 @@ class MainETL():
         self.dimension_tables.append(dim_household_saving_ratio)
         
         # Stock Dim Tables
-        dim_stock_name = DimStockName()
-        self.drop_columns += dim_stock_name.columns
-        self.dimension_tables.append(dim_stock_name)
+        dim_stock = DimStock()
+        self.drop_columns += dim_stock.columns
+        self.dimension_tables.append(dim_stock)
         
         dim_share_price = DimSharePrice()
         self.drop_columns += dim_share_price.columns
@@ -200,13 +200,45 @@ class MainETL():
         # Test Line to see Fact Table as CSV
         # self.fact_table.to_csv("FactTable.csv")
 
-    def load():
-        return None
+    def load(self):
+        for table in self.dimension_tables:
+            table.load()
+        with engine.connect() as con:
+            trans = con.begin()
+            self.fact_table.insert(loc=0, column=f"Econ_Stock_Fact_id", value=range(1, len(self.fact_table) + 1))
+            AzureDB.upload_dataframe_to_sql(f"Econ_Stock_Fact", blob_data=self.fact_table)
+            self.fact_table.to_csv("./data/Econ_Stock_Fact")
+            
+            for table in self.dimension_tables:
+                con.execute(text(f"ALTER TABLE [dbo].[Econ_Stock_Fact] with NOCHECK ADD CONSTRAINT [fk_{table.name}_dim] FOREIGN KEY ([{table.name}_id]) REFERENCES [dbo].[{table.name}_dim] ([{table.name}_id]);"))
+            trans.commit()
+            
+    def etl(self):
+        self.extract()
+        self.transform()
+        self.load()
+        
+    def analysis(self):
+        # Query goes here NOTE: Currently just a random example.
+        query = 'SELECT @@version'
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-app.layout = dbc.Container([
-    html.H1("Visualized Data", className='mb-2', style={'textAlign':'center'}),
-])
-
+        with engine.connect() as connection:
+            df = pd.read_sql_query(sql=text(query), con=connection)
+        print(df.to_markdown())
+        
+        # Visualisation code below NOTE: Actually needs to do something
+        app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+        app.layout = dbc.Container([
+           html.H1("Visualized Data", className='mb-2', style={'textAlign':'center'}),
+        ])
+        
+        app.run_server(debug=False, port=8002)
+        
+def main():
+    # Create an instance of MainETL
+    main = MainETL()
+    main.etl()
+    main.analysis()
+    
 if __name__ == '__main__':
-    app.run_server(debug=False, port=8002)
+    main()

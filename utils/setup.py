@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, text
 import pandas as pd
 
 load_dotenv()
+
 username = os.environ.get("USERNAME_AZURE")
 password = os.environ.get("PASSWORD")
 server = os.environ.get("SERVER")
@@ -14,6 +15,8 @@ database = os.environ.get("DATABASE")
 connection_string = os.environ.get("AZURE_SQL_CONNECTIONSTRING")
 storage_account = os.environ.get("ACCOUNT_STORAGE")
 
+# Using pyodbc
+engine = create_engine(f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+18+For+SQL+Server")
 class AzureDB():
   def __init__(self, local_path = "./data", storage_account = storage_account):
     self.local_path = local_path 
@@ -80,3 +83,29 @@ class AzureDB():
       return df
     except Exception as ex:
       print(f"Exception: {ex}")
+      
+  def upload_dataframe_to_sql(self, blob_name, blob_data):
+    print(f"\nUploading {blob_name} dataframe to Azure SQL Server as table")
+    blob_data.to_sql(blob_name, engine, if_exists="replace", index=False)
+    primary = blob_name.replace("dim", "id")
+    if "fact" in blob_name.lower():
+      with engine.connect() as con:
+        trans = con.begin()
+        con.execute(text(f"ALTER TABLE [dbo].[{blob_name}] alter column {blob_name}_id bigint NOT NULL"))
+        con.execute(text(f"ALTER TABLE [dbo].[{blob_name}] ADD CONSTRAINT PK_{blob_name} PRIMARY KEY CLUSTERED ([{blob_name}_id] ASC);"))
+        trans.commit()
+    else:
+      with engine.connect() as con:
+        trans = con.begin()
+        con.execute(text(f"ALTER TABLE [dbo].[{blob_name}] alter column {primary} bigint NOT NULL"))
+        con.execute(text(f"ALTER TABLE [dbo].[{blob_name}] ADD CONSTRAINT PK_{blob_name} PRIMARY KEY CLUSTERED ([{primary}] ASC);"))
+        trans.commit()
+  def append_dataframe_to_sql(self, blob_name, blob_data):
+    print(f"\nAppending to table: " + blob_name)
+    blob_data.to_sql(blob_name, engine, if_exists="append", index=False)
+    
+  def delete_table_from_sql(self, table_name):
+    with engine.connect() as con:
+      trans = con.begin()
+      con.execute(text(f"DROP TABLE [dbo].[{table_name}]"))
+      trans.commit()

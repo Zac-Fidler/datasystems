@@ -48,7 +48,15 @@ class ModelAbstract():
         self.columns = columns
         
         # dim.to_csv(self.name + ".csv")
-
+        
+    def load(self):
+        if self.dimension_table is not None:
+            # Upload table
+            AzureDB.upload_dataframe_to_sql(f"{self.name}_dim", blob_data=self.dimension_table)
+            # Save as CSV file
+            # self.dimension_table.to_csv(f"./data/{self.name}_dim.csv")
+        else: 
+            print("Dimension Table needs to be created using dimension_generator before being loaded to SQL server!")
 class DimCountry(ModelAbstract):
     def __init__(self):
         super().__init__()
@@ -79,10 +87,10 @@ class DimHouseholdSavingRatio(ModelAbstract):
         super().__init__()
         self.dimension_generator("HouseholdSavingRatio", ["household_saving_ratio"], econ_df)
                 
-class DimStockName(ModelAbstract):
+class DimStock(ModelAbstract):
     def __init__(self):
         super().__init__()
-        self.dimension_generator("StockName", ["stock_name"], stock_df)
+        self.dimension_generator("Stock", ["stock_name"], stock_df)
                 
 class DimSharePrice(ModelAbstract):
     def __init__(self):
