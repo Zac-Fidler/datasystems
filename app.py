@@ -149,6 +149,42 @@ app.layout = html.Div(
                     ],
                     className="card"
                 ),
+                html.Div(
+                    children=[
+                        dcc.Graph(
+                            id="stock-growth-chart",
+                            config={"displayModeBar": False},
+                        ),
+                    ],
+                    className="card"
+                ),
+                html.Div(
+                    children=[
+                        dcc.Graph(
+                            id="dividend-price-chart",
+                            config={"displayModeBar": False},
+                        ),
+                    ],
+                    className="card"
+                ),
+                html.Div(
+                    children=[
+                        dcc.Graph(
+                            id="eps-chart",
+                            config={"displayModeBar": False},
+                        ),
+                    ],
+                    className="card"
+                ),
+                html.Div(
+                    children=[
+                        dcc.Graph(
+                            id="earnings-price-chart",
+                            config={"displayModeBar": False},
+                        ),
+                    ],
+                    className="card"
+                ),
             ],
             className="wrapper"
         ),
@@ -161,6 +197,10 @@ app.layout = html.Div(
     Output("price-chart", "figure"),
     Output("market-cap-chart", "figure"),
     Output("fact-comparison-table", "children"),
+    Output("stock-growth-chart", "figure"),
+    Output("dividend-price-chart", "figure"),
+    Output("eps-chart", "figure"),
+    Output("earnings-price-chart", "figure"),
     Input("stocks-filter", "value"),
     Input("econ-filter", "value"),
     #Input("fact-comparison-table", "column")
@@ -243,7 +283,75 @@ def update_charts(stock, economy):
         ]
     )
 
-    return price_chart_figure, market_cap_chart_figure, fact_comparison_table
+    stock_growth_chart_figure = {
+        "data": [
+            {
+                "x": analysis_data["date"],
+                "y": analysis_data["fact_stock_growth"],
+                "type": "lines",
+                "hovertemplate": "%{y:.2f}"+"%"+"<extra></extra>",
+            },
+        ],
+        "layout": {
+            "title": {"text": "Stock Growth", "x": 0.05, "xanchor": "left"},
+            "xaxis": {"fixedrange": True},
+            "yaxis": {"fixedrange": True},
+            "colorway": ["#9400D3"],
+        },
+    }
+
+    dividend_price_chart_figure = {
+        "data": [
+            {
+                "x": analysis_data["date"],
+                "y": analysis_data["fact_stock_dividend_price_ratio"],
+                "type": "lines",
+                "hovertemplate": "%{y:.2f}<extra></extra>",
+            },
+        ],
+        "layout": {
+            "title": {"text": "Dividend to Price Ratio", "x": 0.05, "xanchor": "left"},
+            "xaxis": {"fixedrange": True},
+            "yaxis": {"fixedrange": True},
+            "colorway": ["#1E90FF"],
+        },
+    }
+
+    eps_chart_figure = {
+        "data": [
+            {
+                "x": analysis_data["date"],
+                "y": analysis_data["fact_stock_earnings_per_share"],
+                "type": "lines",
+                "hovertemplate": "$%{y:.2f}<extra></extra>",
+            },
+        ],
+        "layout": {
+            "title": {"text": "Earnings Per Share (EPS)", "x": 0.05, "xanchor": "left"},
+            "xaxis": {"fixedrange": True},
+            "yaxis": {"fixedrange": True},
+            "colorway": ["#DAA520"],
+        },
+    }
+
+    earnings_price_chart_figure = {
+        "data": [
+            {
+                "x": analysis_data["date"],
+                "y": analysis_data["fact_stock_earnings_price_ratio"],
+                "type": "lines",
+                "hovertemplate": "%{y:.2f}<extra></extra>",
+            },
+        ],
+        "layout": {
+            "title": {"text": "Earnings to Price Ratio", "x": 0.05, "xanchor": "left"},
+            "xaxis": {"fixedrange": True},
+            "yaxis": {"fixedrange": True},
+            "colorway": ["#D2691E"],
+        },
+    }
+
+    return price_chart_figure, market_cap_chart_figure, fact_comparison_table, stock_growth_chart_figure, dividend_price_chart_figure, eps_chart_figure, earnings_price_chart_figure
 
 
 if __name__ == "__main__":

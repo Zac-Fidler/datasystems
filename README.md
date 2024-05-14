@@ -1,6 +1,6 @@
 This guide assumes you have at least Python 3.11 installed
 
-MacOS/Linux
+####MacOS/Linux####
 Open a terminal window and enter the following:
 mkdir stocklens
 cd stocklens
@@ -38,7 +38,7 @@ Finally start the application
 The webapp can be accessed at localhost:8050
 And can be stopped by typing ctrl+c
 
-Windows
+####Windows####
 mkdir stocklens
 cd stocklens
 python -m venv venv
