@@ -1,38 +1,58 @@
 import pandas as pd
 from dash import Dash, Input, Output, dcc, html, dash_table
+import sqlalchemy as sa
+from sqlalchemy import create_engine, text
 
-data = (
-    pd.read_csv("./csv_azure/stocks.csv")
-    #.query("stock_name == 'BHP'")
-    .assign(Date=lambda data: pd.to_datetime(data["date"], format="%d/%m/%Y %H:%M:%S"))
-    .sort_values(by="Date")
+
+connection_url = sa.engine.URL.create(
+    drivername="mysql+pymysql",
+    username="root",
+    password="",
+    host="localhost",
+    database="warehouse",
 )
+
+engine = create_engine(connection_url)
+
+#data = pd.read_sql_query(sql='SELECT * FROM dim_stock',con=engine)
+data = pd.DataFrame(engine.connect().execute(text('SELECT * FROM dim_stock')))
+
+#data = (
+#    pd.read_csv("./csv_processed/stocks.csv")
+#    #.query("stock_name == 'BHP'")
+#    .assign(Date=lambda data: pd.to_datetime(data["date"], format="%d/%m/%Y %H:%M:%S"))
+#    .sort_values(by="Date")
+#)
 Stocks = data["stock_name"].sort_values().unique()
 
 
 #TO DO
-econ_data = (
-    pd.read_csv("./csv_azure/econ.csv")
-    #.query("stock_name == 'BHP'")
-    .assign(date=lambda data: pd.to_datetime(data["date"], format="%d/%m/%Y %H:%M:%S"))
-    .sort_values(by="date")
-)
+#econ_data = (
+#    pd.read_csv("./csv_processed/dim_econ.csv")
+#    #.query("stock_name == 'BHP'")
+#    .assign(date=lambda data: pd.to_datetime(data["date"], format="%d/%m/%Y %H:%M:%S"))
+#    .sort_values(by="date")
+#)
+
+econ_data = pd.DataFrame(engine.connect().execute(text('SELECT * FROM dim_econ')))
 Economy = econ_data["country_name"].sort_values().unique()
 
-fact_comparison_data = (
-    pd.read_csv("./csv_azure/fact_comparison.csv")
+#fact_comparison_data = (
+#    pd.read_csv("./csv_processed/fact_comparison.csv")
     #.query("stock_name == 'BHP'")
     #.assign(Date=lambda data: pd.to_datetime(data["date"], format="%d/%m/%Y %H:%M:%S"))
     #.sort_values(by="Date")
-)
+#)
+fact_comparison_data = pd.DataFrame(engine.connect().execute(text('SELECT * FROM fact_comparison')))
 #fact_comparison = fact_comparison_data["stock_name"].sort_values().unique()
 
-fact_stock_analysis_data = (
-    pd.read_csv("./csv_azure/fact_stock_analysis.csv")
-    #.query("stock_name == 'BHP'")
-    .assign(date=lambda data: pd.to_datetime(data["date"], format="%d/%m/%Y %H:%M:%S"))
-    .sort_values(by="date")
-)
+#fact_stock_analysis_data = (
+#    pd.read_csv("./csv_processed/fact_stock_analysis.csv")
+#    #.query("stock_name == 'BHP'")
+#    .assign(date=lambda data: pd.to_datetime(data["date"], format="%d/%m/%Y %H:%M:%S"))
+#    .sort_values(by="date")
+#)
+fact_stock_analysis_data = pd.DataFrame(engine.connect().execute(text('SELECT * FROM fact_stock_analysis')))
 #fact_stock_analysis = fact_stock_analysis_data["stock_name"].sort_values().unique()
 
 
@@ -105,6 +125,12 @@ app.layout = html.Div(
         html.Div(
             children=[
                 html.Div(
+                    html.Div(
+                        id="fact-comparison-table",
+                        className="card"
+                    ),
+                ),
+                html.Div(
                     children=[
                         dcc.Graph(
                             id="price-chart",
@@ -116,24 +142,12 @@ app.layout = html.Div(
                 html.Div(
                     children=[
                         dcc.Graph(
-                            id="dividend-chart",
+                            id="market-cap-chart",
                             config={"displayModeBar": False},
                         ),
                     ],
                     className="card"
                 ),
-                html.Div(
-            html.Div(
-                children= dash_table.DataTable(
-                    id="table",
-                    columns=[{"name": i, "id": i} for i in econ_data.columns],
-                    #sorting=True,
-                    #sorting_type='multi',
-                    #sorting_settings=[],
-                    ),
-                #className="card"
-            ),
-        ),
             ],
             className="wrapper"
         ),
@@ -144,14 +158,42 @@ app.layout = html.Div(
 
 @app.callback(
     Output("price-chart", "figure"),
-    Output("dividend-chart", "figure"),
+    Output("market-cap-chart", "figure"),
+    Output("fact-comparison-table", "children"),
     Input("stocks-filter", "value"),
     Input("econ-filter", "value"),
+    #Input("fact-comparison-table", "column")
 )
 def update_charts(stock, economy):
     filtered_data = data.query(
         "stock_name == @stock"
     )
+
+    analysis_data = fact_stock_analysis_data.query(
+        "stock_name == @stock"
+    ) 
+
+
+    comparison_data = fact_comparison_data.query(
+        "country_name == @economy & stock_name == @stock"
+    )
+
+    #table_data = comparison_data.drop(
+    #    columns=["stock_name"]
+    #)
+
+    table_data = comparison_data.rename(
+        columns={
+        'country_name': 'Country',
+        'stock_name': 'Stock',
+        'fact_stock_price_country_gdp_growth_coefficient': 'Stock Price GDP Coeff.',
+        'fact_stock_price_country_inflation_coefficient':'Stock Price Inflation Coeff.',
+        'fact_stock_price_country_unemployment_coefficient':'Stock Price Unemployment Coeff.',
+        'fact_stock_price_country_debt_gdp_coefficient':'Stock Price Debt to GDP Coeff.',
+        'fact_stock_price_country_household_savings_coefficient':'Stock Price Household Savings Coeff.'
+        }
+    )
+
     price_chart_figure = {
         "data": [
             {
@@ -173,23 +215,34 @@ def update_charts(stock, economy):
         },
     }
 
-    dividend_chart_figure = {
+    market_cap_chart_figure = {
         "data": [
             {
-                "x": filtered_data["date"],
-                "y": filtered_data["dividend"],
+                "x": analysis_data["date"],
+                "y": analysis_data["fact_stock_market_cap"],
                 "type": "lines",
                 "hovertemplate": "$%{y:.2f}<extra></extra>",
             },
         ],
         "layout": {
-            "title": {"text": "Stock Dividend", "x": 0.05, "xanchor": "left"},
+            "title": {"text": "Market Cap", "x": 0.05, "xanchor": "left"},
             "xaxis": {"fixedrange": True},
             "yaxis": {"fixedrange": True},
             "colorway": ["#E12D39"],
         },
     }
-    return price_chart_figure, dividend_chart_figure
+
+    fact_comparison_table = html.Div(
+        children=[
+            dash_table.DataTable(
+                columns=[{"name": i, "id": i} for i in table_data.columns],
+                data= table_data.to_dict('records'),
+                style_cell={'whiteSpace': 'normal', 'fontFamily': 'helvetica'},
+            )
+        ]
+    )
+
+    return price_chart_figure, market_cap_chart_figure, fact_comparison_table
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ from pandas import merge_ordered, merge
 import numpy as np
 from datetime import datetime,date as dt
 
-#from azure_load import run_azure_load
+from sql_load import run_sql_load
 
 pd.options.mode.chained_assignment = None
 
@@ -254,10 +254,10 @@ fact_stock_analysis = get_fact_stock()
 fact_stock_analysis.to_csv('./csv_processed/fact_stock_analysis.csv', date_format="%d/%m/%Y %H:%M:%S", index=False)
 
 stock_data.to_csv('./csv_processed/dim_stock.csv', date_format="%d/%m/%Y %H:%M:%S", index=False)
-econ_data.to_csv('./csv_processed/dim_country.csv', date_format="%d/%m/%Y %H:%M:%S", index=False)
+econ_data.to_csv('./csv_processed/dim_econ.csv', date_format="%d/%m/%Y %H:%M:%S", index=False)
 
 #Loading into Azure & running azure_load.py
 
 #f.to_csv('./csv_processed/out.csv')
-#x = run_azure_load()
-#print(x)
+x = run_sql_load()
+print(x)
