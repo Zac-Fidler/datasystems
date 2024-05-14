@@ -12,6 +12,7 @@ connection_url = sa.engine.URL.create(
     database="warehouse",
 )
 
+
 engine = create_engine(connection_url)
 
 #data = pd.read_sql_query(sql='SELECT * FROM dim_stock',con=engine)
